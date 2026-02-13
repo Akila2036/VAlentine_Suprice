@@ -758,9 +758,7 @@
 
     <button id="initBtn" onclick="startInit()">Initialize</button>
 
-    <!-- Old bgMusic removed (using new logic) -->
-    <!-- Try playing 'initiate.mp3' on load (Best effort) -->
-    <audio id="initAudio" src="initiate.mp3" autoplay></audio>
+    <!-- Background music/audio element removed to handle via script for better control -->
 
     <div class="panel" id="panel">
       <div class="scan"></div>
@@ -839,8 +837,8 @@
   ">
     <video id="surpriseVideo" style="width: 100%; height: 100%; object-fit: contain;" playsinline>
       <!-- updated to user's file -->
-      <source src="Video.MOV" type="video/mp4">
-      <source src="Video.MOV" type="video/quicktime">
+      <source src="B375507F-4268-4DED-9173-F5A8B3694227.MOV" type="video/mp4">
+      <source src="B375507F-4268-4DED-9173-F5A8B3694227.MOV" type="video/quicktime">
     </video>
     <div id="skipVideo" style="
           position: fixed; 
@@ -904,28 +902,37 @@
 
     const SFX = {
       click: "click.mp3",
-      loading: "5xpdf00c5o3-loading-sfx-8.mp3",
+      loading: "initiate.mp3", // Use initiate as fallback if loading missing
       alarm: "alarm.mp3",
       glass: "glass.mp3",
-      typing: "typing.mp3",
-      intro: "intro.mp3",
+      typing: "Letter Sound.mp3", // Use Letter Sound as fallback for typing
+      intro: "initiate.mp3",
       broken_heart: "broken heart.mp3",
     };
     const LOADING_VOLUME = 0.4;
 
     async function loadBuffer(name, url) {
-      const res = await fetch(url, { cache: "force-cache" });
-      if (!res.ok) throw new Error(`Failed to load ${name} from ${url}`);
-      const arr = await res.arrayBuffer();
-      buffers[name] = await audioCtx.decodeAudioData(arr);
+      try {
+        const res = await fetch(url, { cache: "force-cache" });
+        if (!res.ok) {
+          console.warn(`SFX file missing: ${url}`);
+          return;
+        }
+        const arr = await res.arrayBuffer();
+        buffers[name] = await audioCtx.decodeAudioData(arr);
+      } catch (e) {
+        console.warn(`Failed to buffer ${name}:`, e);
+      }
     }
 
     async function initAudio() {
       if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       if (audioCtx.state === "suspended") await audioCtx.resume();
 
-      if (!buffers.click || !buffers.alarm || !buffers.glass) {
-        await Promise.all([
+      // Only attempt to load if not already attempted
+      if (!buffers._attempted) {
+        buffers._attempted = true;
+        await Promise.allSettled([
           loadBuffer("click", SFX.click),
           loadBuffer("alarm", SFX.alarm),
           loadBuffer("glass", SFX.glass),
@@ -1022,17 +1029,11 @@
     function startWarningSound() {
       stopWarningSound();
 
-      // Stop initiate.mp3 if it's still playing (check both element and global obj)
-      const initAudio = document.getElementById("initAudio");
-      if (initAudio) {
-        initAudio.pause();
-        initAudio.currentTime = 0;
-      }
       if (window.globalInitSound) {
         window.globalInitSound.pause();
         window.globalInitSound.currentTime = 0;
       }
-      // EXACT FILENAME: "warning sound.mp3"
+
       warningAudio = new Audio("warning sound.mp3");
       warningAudio.loop = true;
       warningAudio.volume = 0.6;
@@ -1047,10 +1048,15 @@
       }
     }
 
+    function playGlobalInit() {
+      if (window.globalInitSound) {
+        window.globalInitSound.play().catch(e => console.log("Init play failed:", e));
+      }
+    }
+
     let fwAudio = null;
     function startFireworksSound() {
       stopFireworksSound();
-      // EXACT FILENAME: "fire work.mp3"
       fwAudio = new Audio("fire work.mp3");
       fwAudio.loop = true;
       fwAudio.volume = 0.8;
@@ -1076,14 +1082,8 @@
       const authMenu = document.getElementById("authMenu");
       const box = document.getElementById("mainBox");
 
-      // FIX: Resume audio context on first user interaction
-      if (audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
       initAudio();
-
-      // PLAY BACKGROUND MUSIC ON INITIALIZE
-      // playBackground(); // Removed per request (starts after fireworks/in main.html)
+      playGlobalInit();
 
       btn.disabled = true;
       btn.style.display = "none";
@@ -1091,12 +1091,9 @@
       subtitle.textContent = "Secure system loading...";
       panel.style.display = "block";
 
-      // (Intro music now handled by initiate.mp3 on load)
-
-      // startLoadingLoop(LOADING_VOLUME);
-      playSfx("typing", 0.3); // Ambient computer noise
+      playSfx("typing", 0.3);
       playSfx("click", 0.7);
-      startHeartbeat(0.6); // Start user requested sound
+      startHeartbeat(0.6);
 
       let p = 0;
       const timer = setInterval(() => {
@@ -1108,19 +1105,18 @@
         if (p === 100) {
           clearInterval(timer);
           stopLoadingLoop();
-          stopHeartbeat(); // Stop user requested sound
+          stopHeartbeat();
 
           step.textContent = "> Boot complete";
           title.textContent = "SYSTEM READY";
           subtitle.textContent = "Security lock enabled.";
 
-          // DELAY: Adjust this to change when the "Boot complete" alarm/screen appears
           setTimeout(() => {
             panel.style.display = "none";
             authMenu.style.display = "block";
             box.classList.add("shake");
             playSfx("alarm", 0.8);
-          }, 400); // Changed from 700 to 400 for snappier response
+          }, 400);
         }
       }, 90);
     }
@@ -1256,12 +1252,6 @@
       if (typeof stopFireworksSound === "function") stopFireworksSound();
       if (typeof pauseBackground === "function") pauseBackground();
 
-      // Stop initiate sounds if playing
-      const initAudio = document.getElementById("initAudio");
-      if (initAudio) {
-        initAudio.pause();
-        initAudio.currentTime = 0;
-      }
       if (window.globalInitSound) {
         window.globalInitSound.pause();
         window.globalInitSound.currentTime = 0;
@@ -1414,9 +1404,15 @@
 
       const tryPlayInit = () => {
         window.globalInitSound.play().catch(e => {
-          console.log("Auto-play blocked, waiting for click:", e);
-          // Fallback: Play on first click
-          document.addEventListener('click', () => window.globalInitSound.play(), { once: true });
+          console.log("Auto-play blocked, waiting for interaction.");
+          // Fallback: Play on first click or touch
+          const playOnInteraction = () => {
+            window.globalInitSound.play().catch(() => { });
+            document.removeEventListener('click', playOnInteraction);
+            document.removeEventListener('touchstart', playOnInteraction);
+          };
+          document.addEventListener('click', playOnInteraction);
+          document.addEventListener('touchstart', playOnInteraction);
         });
       };
 

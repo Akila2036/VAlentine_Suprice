@@ -1275,9 +1275,17 @@
 
         // AUTO-PLAY BG MUSIC ON LOAD (After fireworks/redirect)
         window.addEventListener('load', () => {
+            const playBg = () => {
+                globalBgAudio.play().then(() => {
+                    document.removeEventListener('click', playBg);
+                    document.removeEventListener('touchstart', playBg);
+                }).catch(e => console.log("Still blocked or failed:", e));
+            };
+
             globalBgAudio.play().catch(e => {
-                // If blocked, wait for first click
-                document.addEventListener('click', () => globalBgAudio.play(), { once: true });
+                // If blocked, wait for first interaction
+                document.addEventListener('click', playBg);
+                document.addEventListener('touchstart', playBg);
             });
         });
 
