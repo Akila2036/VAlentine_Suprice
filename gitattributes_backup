@@ -1,0 +1,2 @@
+# No LFS tracking for media files because GitHub Pages doesn't support LFS
+# Moving these to regular Git so they play on the website
