@@ -594,39 +594,46 @@
         /* 3. GALLERY SECTION */
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+            justify-items: center;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 1s ease-out;
+        }
+
+        .gallery-grid.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         .photo-frame {
             position: relative;
-            border-radius: 12px;
-            overflow: hidden;
-            aspect-ratio: 1;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-            transition: transform 0.3s;
             background: #fff;
-            padding: 5px;
+            padding: 10px 10px 35px 10px;
+            /* Polaroid style */
+            border-radius: 4px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            width: 100%;
+            max-width: 220px;
+            aspect-ratio: 4/5;
+            overflow: hidden;
+            border: 1px solid rgba(0, 0, 0, 0.05);
         }
 
         .photo-frame:hover {
-            transform: scale(3.5);
-            /* Much larger zoom */
-            z-index: 100 !important;
-            /* Ensure it stays on top */
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            /* Stronger shadow */
-            border-radius: 4px;
-            /* Slightly squarer when zoomed */
-            cursor: pointer;
+            transform: scale(1.08) rotate(2deg);
+            z-index: 50;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
         }
 
         .photo-frame img {
             width: 100%;
-            height: 100%;
+            height: 85%;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: 2px;
         }
 
         /* ANIMATIONS */
@@ -1028,8 +1035,10 @@
         </div>
 
         <!-- SECTION 3: MEMORY GALLERY -->
-        <div class="card" style="animation-delay: 0.6s;">
-            <h2>Our Memories</h2>
+        <div class="card" id="memoryGallery" style="display: none; animation-delay: 0.6s;">
+            <h2 style="font-family: 'Dancing Script', cursive; font-size: 2.8rem; color: #800f2f; margin-bottom: 5px;">
+                Our Memories Together ✨</h2>
+
 
             <div class="gallery-grid">
                 <!-- Sorted by Date (Oldest to Newest) -->
@@ -1187,6 +1196,15 @@
 
                 err.style.opacity = '0';
                 failCount = 0; // Reset on success
+
+                // REVEAL MEMORY GALLERY
+                const gallery = document.getElementById('memoryGallery');
+                gallery.style.display = 'block';
+                setTimeout(() => {
+                    document.querySelector('.gallery-grid').classList.add('visible');
+                    // Scroll to gallery smoothly
+                    gallery.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
             } else if (input.length > 0 && !SECRET_PASS.startsWith(input)) {
                 // Wrong
                 failCount++;

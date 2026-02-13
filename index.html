@@ -1142,11 +1142,11 @@
     let attemptsLeft = 3;
 
     // Your correct ONE-word answer (lowercase)
-    const SECRET_ANSWER = "infinite";
+    const SECRET_ANSWER = "infinity";
 
     // If you want ONLY ONE exact word, keep it like above.
     // If you want to accept synonyms, add them here:
-    const ACCEPTED = new Set([SECRET_ANSWER]); // e.g. new Set(["infinite","endless","immeasurable"])
+    const ACCEPTED = new Set([SECRET_ANSWER]); // e.g. new Set(["infinity","endless","immeasurable"])
 
     function updateAttemptsUI() {
       document.getElementById("attemptsText").textContent = `Attempts: ${attemptsLeft}`;
