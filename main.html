@@ -1,0 +1,1387 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You, My Love ❤️</title>
+    <script>
+        // verify clean access
+        if (!sessionStorage.getItem("unlocked")) {
+            window.location.href = "index.html";
+        } else {
+            // Remove the flag so a refresh forces restart
+            sessionStorage.removeItem("unlocked");
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Outfit:wght@300;500;700&display=swap');
+
+        :root {
+            --primary: #ff4d6d;
+            --accent-blue: #4361ee;
+            /* New Blue */
+            --bg-gradient: linear-gradient(135deg, #ff9a9e 0%, #a18cd1 50%, #fbc2eb 100%);
+            /* Pink + Blue Gradient */
+            --glass: rgba(255, 255, 255, 0.7);
+            --shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-gradient);
+            color: #2b2d42;
+            /* Darker text for better contrast */
+            overflow-x: hidden;
+        }
+
+        /* ... (Keep existing simple styles) ... */
+
+        /* 2. LETTER SECTION - REALISTIC & FULL SCREEN FIX */
+        .envelope-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto;
+            transition: transform 0.8s ease;
+            z-index: 100;
+            /* Ensure it stays above other things during anim */
+        }
+
+        /* Fullscreen Overlay Wrapper (New Approach to fix bugs) */
+        .envelope-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+            backdrop-filter: blur(5px);
+        }
+
+        /* When active, show the overlay */
+        .envelope-container.fullscreen .envelope-overlay {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* The Envelope Itself - NOW BLUE! */
+        .envelope {
+            position: relative;
+            width: 320px;
+            height: 220px;
+            /* Blue Gradient for the Envelope */
+            background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            z-index: 1000;
+            /* Above the overlay */
+            transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* When fullscreen, we move the envelope wrapper to center screen using fixed positioning on parent */
+        .envelope-container.fullscreen .envelope {
+            transform: scale(1.3) translateY(50px);
+        }
+
+        /* When reading, the envelope slides down */
+        .envelope-container.reading .envelope {
+            transform: translateY(200px) scale(0.8);
+            opacity: 0;
+            /* Fade out envelope to focus on letter */
+        }
+
+        /* Bottom Triangle (Pocket) */
+        .envelope::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 160px 110px 160px;
+            border-color: transparent transparent #4895ef transparent;
+            /* Lighter Blue */
+            z-index: 3;
+            border-radius: 0 0 12px 12px;
+            filter: drop-shadow(0 -3px 5px rgba(0, 0, 0, 0.2));
+        }
+
+        /* Top Flap */
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 110px 160px 0 160px;
+            border-color: #3a0ca3 transparent transparent transparent;
+            /* Darker Blue */
+            transform-origin: top;
+            transition: transform 0.6s 0.4s, z-index 0.2s;
+            z-index: 4;
+            border-radius: 12px 12px 0 0;
+            filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.1));
+        }
+
+        .envelope.open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+            transition-delay: 0s;
+        }
+
+        /* The Letter Paper */
+        .paper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0.5);
+            width: 90%;
+            max-width: 280px;
+            height: 180px;
+            background: #fffdf7;
+            border-radius: 5px;
+            padding: 20px;
+            z-index: 2;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* Slide out phase */
+        .envelope.open .paper {
+            transform: translate(-50%, -100%) scale(1);
+            /* Move up */
+            opacity: 1;
+            z-index: 5;
+        }
+
+        /* Maximize Phase (Reading Mode) */
+        /* We move the paper to FIXED center of screen, independent of envelope */
+        .envelope-container.reading .paper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: min(600px, 85vw) !important;
+            height: min(70vh, 600px) !important;
+            max-width: none;
+            /* override previous limit */
+            z-index: 9999;
+            /* Highest priority */
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow-y: auto;
+            transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* Update close button */
+        .close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4361ee;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10001;
+            /* Above paper */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: opacity 0.5s;
+        }
+
+        .envelope-container.reading .close-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* FLOATING HEARTS BACKGROUND */
+        .bg-hearts {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .heart-bg {
+            position: absolute;
+            bottom: -10vh;
+            color: rgba(255, 255, 255, 0.3);
+            font-size: 2rem;
+            animation: floatUp 10s linear infinite;
+        }
+
+        @keyframes floatUp {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+
+            100% {
+                transform: translateY(-110vh) rotate(360deg);
+                opacity: 0;
+            }
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        h1 {
+            font-family: 'Dancing Script', cursive;
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            color: #800f2f;
+            text-shadow: 2px 2px 0px rgba(255, 255, 255, 0.5);
+            animation: fadeInDown 1s ease-out;
+        }
+
+        /* CARD STYLES */
+        .card {
+            background: var(--glass);
+            backdrop-filter: blur(8px);
+            border-radius: 20px;
+            padding: 30px;
+            margin: 30px 0;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+            transform: translateY(20px);
+            opacity: 0;
+            animation: fadeInUp 0.8s ease-out forwards;
+        }
+
+        /* 1. REASONS WHY SECTION */
+        .reason-box {
+            min-height: 120px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #reason-text {
+            font-size: 1.4rem;
+            font-weight: 500;
+            margin-bottom: 20px;
+            color: #a4133c;
+            min-height: 60px;
+            transition: opacity 0.3s;
+        }
+
+        /* TEXT ANIMATIONS */
+        .anim-pop {
+            animation: popIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .anim-slide {
+            animation: slideInLeft 0.6s ease-out;
+        }
+
+        .anim-blur {
+            animation: blurIn 0.8s ease-out;
+        }
+
+        .anim-float {
+            animation: floatIn 0.7s ease-out;
+        }
+
+        @keyframes popIn {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideInLeft {
+            0% {
+                transform: translateX(-50px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes blurIn {
+            0% {
+                filter: blur(10px);
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            100% {
+                filter: blur(0);
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes floatIn {
+            0% {
+                transform: translateY(20px) rotate(5deg);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0) rotate(0);
+                opacity: 1;
+            }
+        }
+
+        .btn-love {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1rem;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(255, 77, 109, 0.4);
+            transition: transform 0.2s, background 0.2s;
+        }
+
+        .btn-love:hover {
+            transform: scale(1.05);
+            background: #ff758f;
+        }
+
+        .btn-love:active {
+            transform: scale(0.95);
+        }
+
+        /* 2. LETTER SECTION - REALISTIC & FULL SCREEN */
+        .envelope-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* Fullscreen Mode State */
+        .envelope-container.fullscreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9999;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+        }
+
+        .envelope {
+            position: relative;
+            width: 320px;
+            height: 220px;
+            background: linear-gradient(135deg, #ff4d6d 0%, #c9184a 100%);
+            /* Depth gradient */
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            transition: transform 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+            z-index: 2;
+        }
+
+        /* Fullscreen: Scale up envelope slightly before letter release */
+        .envelope-container.fullscreen .envelope {
+            transform: scale(1.2);
+        }
+
+        /* Bottom Triangle (Pocket) */
+        .envelope::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 160px 110px 160px;
+            /* Slightly wider to match width */
+            border-color: transparent transparent #ff758f transparent;
+            z-index: 3;
+            border-radius: 0 0 12px 12px;
+            filter: drop-shadow(0 -3px 5px rgba(0, 0, 0, 0.1));
+        }
+
+        /* Top Flap */
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 110px 160px 0 160px;
+            border-color: #a4133c transparent transparent transparent;
+            /* Darker red */
+            transform-origin: top;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.5s, z-index 0.2s;
+            /* Delayed opening */
+            z-index: 4;
+            border-radius: 12px 12px 0 0;
+            filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.1));
+        }
+
+        .envelope.open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+            transition-delay: 0s;
+        }
+
+        /* The Paper / Letter */
+        .paper {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            background: #fffdf7;
+            /* Creamy paper color */
+            border-radius: 6px;
+            padding: 30px;
+            /* Hidden initially */
+            transform: translateY(0) scale(0.9);
+            z-index: 2;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1);
+
+            /* Realistic Paper Texture */
+            background-image: linear-gradient(#eee 1px, transparent 1px);
+            background-size: 100% 1.8rem;
+        }
+
+        /* Letter Slide Out & Fullscreen Expansion */
+        .envelope.open .paper {
+            /* 1. Slide Out Phase */
+            opacity: 1;
+            z-index: 10;
+            transform: translateY(-120px) scale(1);
+            height: auto;
+            min-height: 300px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        /* 
+           FINAL STAGE: The paper separates from the envelope and fills the screen.
+           We'll add a specific class '.paper-open' to the *container* or *envelope* 
+           to trigger this final maximization 
+        */
+        .envelope-container.fullscreen.reading .paper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(1);
+            width: min(600px, 90vw);
+            height: min(80vh, 700px);
+            max-height: 80vh;
+            overflow-y: auto;
+            border-radius: 10px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            transition: all 0.8s cubic-bezier(0.19, 1, 0.22, 1) 0.4s;
+            /* Delay to let flap open */
+        }
+
+        /* Close Button (only visible in fullscreen) */
+        .close-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border: 2px solid #fff;
+            padding: 10px 20px;
+            border-radius: 50px;
+            cursor: pointer;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+            z-index: 10000;
+        }
+
+        .envelope-container.fullscreen.reading .close-btn {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ... Removed old envelope rules ... */
+
+        .letter-content {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: #590d22;
+        }
+
+        /* PASSWORD OVERLAY - Now integrated differently */
+        .password-layer {
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(5px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 20px;
+            z-index: 10;
+        }
+
+        /* HIDE Password Layer when unlocked */
+        .password-layer.hidden {
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+
+        .pwd-input {
+            padding: 10px 15px;
+            font-size: 1rem;
+            border: 2px solid #ff4d6d;
+            border-radius: 50px;
+            outline: none;
+            text-align: center;
+            margin-bottom: 10px;
+            font-family: 'Outfit', sans-serif;
+            z-index: 20;
+        }
+
+        .error-msg {
+            color: #d00000;
+            font-size: 0.9rem;
+            min-height: 20px;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        /* 3. GALLERY SECTION */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .photo-frame {
+            position: relative;
+            border-radius: 12px;
+            overflow: hidden;
+            aspect-ratio: 1;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s;
+            background: #fff;
+            padding: 5px;
+        }
+
+        .photo-frame:hover {
+            transform: scale(3.5);
+            /* Much larger zoom */
+            z-index: 100 !important;
+            /* Ensure it stays on top */
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            /* Stronger shadow */
+            border-radius: 4px;
+            /* Slightly squarer when zoomed */
+            cursor: pointer;
+        }
+
+        .photo-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+
+        /* ANIMATIONS */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* MOBILE ADJUSTMENTS */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .card {
+                padding: 20px;
+                margin: 20px 0;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            p {
+                font-size: 1rem;
+            }
+
+            .password-layer p {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* MOBILE ADJUSTMENTS */
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px 15px;
+            }
+
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .card {
+                padding: 20px;
+                margin: 20px 0;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            p {
+                font-size: 1rem;
+            }
+
+            .password-layer p {
+                font-size: 1.1rem;
+            }
+        }
+
+        /* =========================================
+           NEW BLUE-PINK THEME & ROBUST FULLSCREEN
+           ========================================= */
+        :root {
+            --primary: #ff4d6d;
+            --accent-blue: #4361ee;
+            --bg-gradient: linear-gradient(135deg, #ff9a9e 0%, #a18cd1 50%, #fbc2eb 100%);
+            --glass: rgba(255, 255, 255, 0.7);
+        }
+
+        body {
+            background: var(--bg-gradient);
+            color: #2b2d42;
+        }
+
+        /* FIX: Robust Fullscreen Overlay */
+        .full-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.85);
+            z-index: 9999;
+            backdrop-filter: blur(5px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }
+
+        .full-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+            display: none;
+            /* Hide completely when done */
+        }
+
+        .envelope-wrapper {
+            position: relative;
+            transform: scale(0.8);
+            transition: transform 0.8s ease;
+        }
+
+        /* Zoom in when opening */
+        .full-overlay.active .envelope-wrapper {
+            transform: scale(1.2);
+        }
+
+        /* Envelopes are now Blue */
+        .envelope {
+            position: relative;
+            width: 320px;
+            height: 220px;
+            background: linear-gradient(135deg, #4361ee 0%, #3f37c9 100%);
+            border-radius: 12px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+            transition: transform 0.8s ease;
+        }
+
+        .envelope::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 160px 110px 160px;
+            border-color: transparent transparent #4895ef transparent;
+            z-index: 3;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .envelope-flap {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 110px 160px 0 160px;
+            border-color: #3a0ca3 transparent transparent transparent;
+            transform-origin: top;
+            transition: transform 0.6s 0.2s;
+            z-index: 4;
+            border-radius: 12px 12px 0 0;
+        }
+
+        /* Animation States */
+        .envelope.open .envelope-flap {
+            transform: rotateX(180deg);
+            z-index: 1;
+        }
+
+        /* The Paper */
+        .paper {
+            position: absolute;
+            top: 5px;
+            left: 5px;
+            right: 5px;
+            bottom: 5px;
+            background: #fffdf7;
+            border-radius: 5px;
+            padding: 20px;
+            z-index: 2;
+            transition: all 0.8s ease;
+            transform: translateY(0);
+            opacity: 0;
+            /* hidden initially */
+            overflow: hidden;
+        }
+
+        /* 1. Slide Out */
+        .envelope.open .paper {
+            transform: translateY(-80px);
+            opacity: 1;
+            z-index: 5;
+        }
+
+        /* 2. Reading Mode (Maximize) */
+        .full-overlay.reading .paper {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            width: 90vw;
+            max-width: 600px;
+            height: 70vh;
+            max-height: 600px;
+            transform: translate(-50%, -50%);
+            z-index: 10000;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            overflow-y: auto;
+        }
+
+        /* Close Button */
+        /* Close Button */
+        .close-btn {
+            position: fixed;
+            bottom: 30px;
+            /* Moved to bottom for easier access */
+            left: 50%;
+            transform: translateX(-50%);
+            background: #fff;
+            color: #4361ee;
+            font-weight: bold;
+            padding: 15px 40px;
+            border-radius: 50px;
+            cursor: pointer;
+            z-index: 100000;
+            /* Super high z-index */
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            font-size: 1.2rem;
+            border: 2px solid #4361ee;
+            transition: transform 0.2s;
+        }
+
+        .close-btn:hover {
+            transform: translateX(-50%) scale(1.05);
+            background: #4361ee;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- PRELOADER -->
+    <div id="preloader" style="
+        position: fixed; 
+        inset: 0; 
+        background: #000; 
+        z-index: 999999; 
+        display: flex; 
+        flex-direction: column; 
+        align-items: center; 
+        justify-content: center; 
+        color: #ff4d6d;
+        font-family: monospace;
+        transition: opacity 0.5s;
+    ">
+        <div style="font-size: 24px; font-weight: bold; margin-bottom: 20px;">LOADING LOVE... ❤️</div>
+        <div
+            style="width: 200px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 99px; overflow: hidden;">
+            <div id="loader-bar" style="width: 0%; height: 100%; background: #ff4d6d; transition: width 0.3s;"></div>
+        </div>
+        <div id="loader-text" style="margin-top: 10px; font-size: 12px; opacity: 0.7;">Initializing assets...</div>
+    </div>
+
+    <!-- Floating hearts background -->
+    <!-- Floating hearts background -->
+    <div class="bg-hearts" id="bg-hearts"></div>
+
+    <!-- FULLSCREEN LETTER OVERLAY (Moved outside container to fix clipping) -->
+    <div id="full-letter-view" class="full-overlay hidden">
+        <div class="envelope-wrapper">
+            <div class="envelope" id="full-envelope">
+                <div class="envelope-flap"></div>
+                <div class="paper" id="full-paper">
+                    <div class="letter-content">
+                        <p style="font-weight: bold; font-size: 1.2rem;">💌 මගේ ආදරණීය චූටි මැණිකට... 🌹✨</p>
+                        <p>
+                            හැමදාම එකම විදිහට සුබ පතන නිසා, අද පොඩි වෙනසක් කරන්න හිතුවා. 🔄 ඒක හොඳද නරකද කියලා මම දන්නේ
+                            නැහැ, හැබැයි මේක චූටි අම්මට චූටි ළමයගෙන් ලැබෙන පුංචි සප්රයිස් එකක්! 🤭🤭😘 ඔයා හැමදාම මගෙන්
+                            ලියුමක් ඉල්ලුවා නේද? මෙන්න එහෙනම් මගේ ලියුම ඩිජිටල් විදිහට! 📱✍️
+                        </p>
+                        <p>
+                            මං වෙනුවෙන් හැමදාම මගේ ළඟින් ඉඳගෙන, ආදරයෙන් මාව බලාගන්නවට මම ඔයාට ගොඩක් ආදරෙයි මැණික... 🥺💖
+                            මාව හැමදාම පරිස්සන් කරනවට, අම්මෙක් වගේ මාව බලාගන්නවට මම ඇත්තටම සෑහෙන්න ආදරෙයි. 👩‍👦💕
+                            ප්‍රශ්න, හිත රිදීම් කොච්චර තිබුණත්, ඒ හැමදේම මැද මගේ ළඟින්ම ඉන්නවට, මම වෙනුවෙන් ඉන්නවට මම
+                            ගොඩක් ආදරෙයි. ඒ ගැන කොච්චර කියලා ඉවර කරන්න හැදුවත් මට කවදාවත් ඒක කියලා ඉවර කරන්න බැහැ
+                            මැණිකේ... 🥺😘🌈
+                        </p>
+                        <p>
+                            මගේ චූටි ළමයා, මගේ මැණික ඔයා කොච්චර ලස්සනද, කොච්චර ආදරණීයද, කොච්චර සෙක්සිද, කියලා මට වචන
+                            වලින් කියන්න
+                            තේරෙන්නේ නැහැ. 🌸💎 ඔයා ඇත්තටම හරිම හොඳ, අහිංසක කෙනෙක්. ✨ අපි මේ යන ගමනේදී ඔයා සෑහෙන්න
+                            ප්‍රශ්න වලට වගේම දුක් වලට මුහුණ දෙනවා කියලා මම දන්නවා. ⛈️ ඒත් ඒ හැම වෙලාවකම මගේ පැත්තෙන්
+                            ඉඳගෙන, "ඕනෑම දෙයක් අපි දෙන්නා එකතු වෙලා විසඳගමු" කියලා මාව දෛර්යමත් කරන එකට මම ඔයාට සෑහෙන්න
+                            ආදරෙයි. 🤝❤️ මම කොච්චර මානසිකව වැටිලා හිටියත්, එක වචනයකින් මගේ හිත හදලා, "ඔයාට මේක පුළුවන්"
+                            කියලා මාව මෝටිවේට් කරන්නේ කොහොමද කියලා මට හිතාගන්නවත් බැහැ. ⚓ ඔයා ළඟ තියෙන ඒ සැනසීම, ඒ නිදහස
+                            ගැන කියන්න මට වචන නැහැ මැණිකේ... 🍃🕊️
+                        </p>
+                        <p>
+                            ඇත්තටම මම ඔයා වගේ ලස්සනට ලියන්න දන්නේ නැහැ කියලා ඔයා දන්නවනේ. 😅 මම මේ ලියන්නේ මගේ හිතට එන
+                            දේවල්. ✍️💭 මට මේ ලෝකේ අතහරින්න බැරි කිසිම දෙයක් නැහැ, ඕනෑම දෙයක් මට අතහරින්න පුළුවන්... ඒත්
+                            එකම එක දෙයක් ඇරෙන්න. ඒ ඔයාව. 🚫💎 මම ඔයාට සෑහෙන්න ආදරෙයි, වගේම ඔයා ගැන මම ගොඩක් ලෝබයි
+                            මැණිකේ. 😍 මගේ අතින් සෑහෙන්න අඩුපාඩු, වැරදීම් වෙනවා ඇති. මම ඒවා අඩු කරගන්න ගොඩක් උත්සාහ
+                            කරනවා. 🛠️❤️
+                        </p>
+                        <p>
+                            මම වෙලාවකට හිතනවා, ඇත්තටම ආදරය කියන්නේ මොකක්ද? 🤔 කැප කිරීමක්ද? ලබා ගැනීමක්ද? නැත්නම් අයිති
+                            කර ගැනීමක්ද? මම හිතන්නේ, මම ඔයාට ආදරය දීලා ඔයාගෙන් ආදරය බලාපොරොත්තු වෙනවා නම්, මගෙයි
+                            ව්‍යාපාරිකයෙකුගෙයි වෙනස මොකක්ද? 💼 මම ආදරය දීලා ඔයාගෙන් කිසිම ආදරයක් බලාපොරොත්තු වෙන්නේ
+                            නැත්නම්, මගෙයි බෝසත්වරයෙකුගෙයි වෙනස මොකක්ද? 🙏 ඒ වගේම මම ආදරය නොදී ඔයාගෙන් විතරක් ආදරය
+                            බලාපොරොත්තු වෙනවා නම්, මගෙයි හිඟන්නෙකුගෙයි වෙනස මොකක්ද? 🤲
+                        </p>
+                        <p>
+                            ඇත්තටම මට ඒකට උත්තරයක් නැහැ. 🤷‍♂️ හැබැයි මම ආදරය ඔයාගෙන් දකිනවා, විඳිනවා, ලබනවා... ඒක
+                            හරිම ලස්සන, මිහිරි, වගේම සතුටුදායක දෙයක්. 🍭🍯🌈 මම ආස නැහැ ඒක කවදාවත් නැති කරගන්න. ඉතින්
+                            පැටියෝ, ඒ ආදරය මට දුන්න, ඒ වගේම මට ආදරය දෙන ඔයාට මම සෑහෙන්න ආදරෙයි. 💓✨
+                        </p>
+                        <p>
+                            මම හැමදාමත් මගේ පැටියා වෙනුවෙන් ඕනෑම දේකට, ඕනෑම වෙලාවක ඔයා එක්ක ඉන්නවා. 🛡️ ඕනෑම දෙයක් ඕනෑම
+                            වෙලාවක මට කියන්න... I Am Always With You. 🫂🌎
+                        </p>
+                        <p>
+                            අදටත්, හෙටටත්, හැමදාටමත් මගේ එකම ආදරය ඔයා විතරයි පැටියෝ. 🥺🥺😘 මගේ චූටි අම්මා... 🥺😘😘😘🧸
+                        </p>
+                        <div class="signature">මීට, <br> ඔයාගේම චූටි ළමයා ❤️🍭</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="close-btn" onclick="closeLetter()">× Close</div>
+    </div>
+
+    <!-- MUSIC PLAYER REMOVED -->
+    <script>
+        // Adjust the delay (in milliseconds) before the music starts
+        const MUSIC_DELAY = 1500;
+
+        window.addEventListener('load', () => {
+            // Music removed per request
+        });
+    </script>
+
+    <div class="container">
+        <h1>Happy Valentine's Day!</h1>
+        <p style="font-size: 1.2rem; margin-bottom: 40px;">You are my favorite notification. ❤️</p>
+
+        <!-- SECTION 1: REASONS WHY -->
+        <div class="card" style="animation-delay: 0.2s;">
+            <h2>Why I Love You</h2>
+            <div class="reason-box">
+                <p id="reason-text">Tap the button to find out...</p>
+                <button class="btn-love" onclick="showReason()">Tell Meeee 🥰</button>
+            </div>
+        </div>
+
+        <!-- SECTION 2: THE ENVELOPE LETTER -->
+        <div class="card" style="animation-delay: 0.4s; min-height: 400px;">
+            <h2>My Letter to You</h2>
+
+            <div class="envelope-container">
+                <!-- Overlay for dark background in fullscreen -->
+                <div class="envelope-overlay"></div>
+
+                <!-- PASSWORD LAYER is now on top of the envelope container -->
+                <div class="password-layer" id="letterLock">
+                    <p style="font-weight: bold; color: #a4133c;">🔒 Enter the magic word to open:</p>
+                    <input type="password" class="pwd-input" id="pwd" placeholder="Enter password..."
+                        onkeyup="checkPass()">
+                    <div class="error-msg" id="errMsg">Incorrect, try again!</div>
+                </div>
+
+                <div class="envelope" id="envelope">
+                    <div class="envelope-flap"></div>
+                    <div class="paper">
+                        <div class="letter-content">
+                            <p>My Dearest,</p>
+                            <p>
+                                I wanted to make something special for you to show you how much you mean to me.
+                                Every moment with you is like a beautiful line of code—perfectly executed and
+                                full of meaning. You are the CSS to my HTML; without you, I'd just be plain text.
+                            </p>
+                            <p>
+                                Thank you for being my partner, my best friend, and my greatest adventure.
+                                I promise to always debug our problems together and keep our love loop running forever.
+                            </p>
+                            <div class="signature">Forever Yours, <br> [Your Name]</div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Close Button for Fullscreen -->
+                <div class="close-btn" onclick="closeLetter()">× Close</div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: MEMORY GALLERY -->
+        <div class="card" style="animation-delay: 0.6s;">
+            <h2>Our Memories</h2>
+
+            <div class="gallery-grid">
+                <!-- Sorted by Date (Oldest to Newest) -->
+                <div class="photo-frame"><img src="IMG_1846.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_3836.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_7372.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_7381.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_7382.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_9359.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="c0d784e3-6443-4bdc-8480-0296bf045b74.JPG" loading="lazy"
+                        alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_0757.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_0973.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_1577.jpg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="c2cf5d71-0acd-4564-ab00-7e2f724a9feb.jpg" loading="lazy"
+                        alt="Memory"></div>
+                <div class="photo-frame"><img src="2b55b6af-1a35-41a8-bed0-4c98d69f53e7.jpg" loading="lazy"
+                        alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_3134.jpg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_3182.jpg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_4592.jpg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_4596.jpg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_7435.jpg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="e22d46b0-5ec4-4fb8-b5a6-6fecaca93edb.jpg" loading="lazy"
+                        alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_9076.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_9096.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_9220.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_9221.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_9240.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="f01b13f8-346b-405b-9103-ba7d1b832258.jpg" loading="lazy"
+                        alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG_9318.jpeg" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="32c3d582-80ea-44b8-bc1f-b44033833fab.JPG" loading="lazy"
+                        alt="Memory"></div>
+                <div class="photo-frame"><img src="1000205235.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="1000205181.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250104-WA0193.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241102-WA0013.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241019-WA0043.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241113-WA0042.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241113-WA0038.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241113-WA0062.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20240918-WA0048.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241201-WA0061.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241201-WA0071.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241113-WA0045.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241113-WA0024.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241008-WA0100.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250329-WA0079.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250316-WA0055.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250110-WA0100.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250330-WA0001.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250104-WA0323.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241011-WA0029.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250104-WA0309.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250104-WA0307.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241010-WA0047.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250104-WA0079.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241117-WA0062.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="1000205291.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241113-WA0080.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="1bcdc053-06fd-44ec-9612-18bfddb3a19f.JPEG" loading="lazy"
+                        alt="Memory"></div>
+                <div class="photo-frame"><img src="bfa56724-0a45-42d6-adca-002ca7d4466f.JPEG" loading="lazy"
+                        alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241207-WA0023.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241113-WA0074.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250329-WA0092.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20250104-WA0109.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241112-WA0008.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="1000205281.JPEG" loading="lazy" alt="Memory"></div>
+                <div class="photo-frame"><img src="IMG-20241113-WA0068.JPEG" loading="lazy" alt="Memory"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 1. REASONS WHY LOGIC
+        // 1. REASONS WHY LOGIC
+        // 3. REASONS WHY LOGIC
+        // 1. REASONS WHY LOGIC
+        const reasons = [
+            "Your smile lights up my entire world. ✨",
+            "You make even the boring days fun. 🤪",
+            "Your laugh is my favorite sound. 🎶",
+            "You give the best hugs. 🤗",
+            "You support my crazy ideas (like this one!). 💡",
+            "You are simply beautiful, inside and out. 💖",
+            "I love the way you look at me. 👀",
+            "You make me want to be a better person. 🚀",
+            "You are the prettiest girl I know. 🌹",
+            "I love the way you love me. 🥰",
+            "I don’t love you for a reason. I love you because it’s you. ❤️"
+        ];
+
+        function showReason() {
+            const textElement = document.getElementById('reason-text');
+
+            // Remove old animation classes to restart
+            textElement.classList.remove('anim-pop', 'anim-slide', 'anim-blur', 'anim-float');
+
+            // Fade out slightly
+            textElement.style.opacity = 0;
+
+            setTimeout(() => {
+                // 1. Pick a random reason
+                const randomReason = reasons[Math.floor(Math.random() * reasons.length)];
+                textElement.innerText = randomReason;
+
+                // 2. Pick a random animation
+                const animations = ['anim-pop', 'anim-slide', 'anim-blur', 'anim-float'];
+                const randomAnim = animations[Math.floor(Math.random() * animations.length)];
+                textElement.classList.add(randomAnim);
+                textElement.style.opacity = 1;
+
+            }, 200);
+        }
+
+        // 2. FLOATING HEARTS BACKGROUND
+        function createHeart() {
+            const heart = document.createElement('div');
+            heart.classList.add('heart-bg');
+            heart.innerHTML = '❤️';
+            heart.style.left = Math.random() * 100 + 'vw';
+            heart.style.animationDuration = Math.random() * 3 + 5 + 's'; // 5-8s
+            heart.style.fontSize = Math.random() * 1.5 + 1 + 'rem';
+
+            document.getElementById('bg-hearts').appendChild(heart);
+
+            setTimeout(() => {
+                heart.remove();
+            }, 8000);
+        }
+
+        // 3. LETTER PASSWORD LOGIC
+        // 3. LETTER PASSWORD LOGIC
+        const SECRET_PASS = "ilu";
+        let failCount = 0;
+
+        function checkPass() {
+            const input = document.getElementById('pwd').value.toLowerCase();
+            const lock = document.getElementById('letterLock');
+            const err = document.getElementById('errMsg');
+
+            if (input === SECRET_PASS) {
+                // Correct Password
+                openFullscreenLetter(); // Launch animation
+
+                // Switch Lock Content to "Open Again" Mode
+                lock.innerHTML = `
+                    <p style="font-weight: bold; color: #a4133c;">Letter Unlocked! 🔓</p>
+                    <button class="btn-love" style="margin-top: 10px;" onclick="openFullscreenLetter()">Read Again 💌</button>
+                `;
+
+                err.style.opacity = '0';
+                failCount = 0; // Reset on success
+            } else if (input.length > 0 && !SECRET_PASS.startsWith(input)) {
+                // Wrong
+                failCount++;
+
+                const pwdBox = document.querySelector('.pwd-input');
+                pwdBox.style.animation = "shake 0.3s ease";
+                setTimeout(() => (pwdBox.style.animation = ""), 300);
+
+                // Show hint after 10 failures
+                if (failCount >= 10) {
+                    err.textContent = "👆🏻🫷🏻✌🏻";
+                    err.style.opacity = '1';
+                }
+            } else {
+                err.style.opacity = '0';
+            }
+        }
+
+        // Initialize Audio Objects Globally
+        const globalEnvAudio = new Audio("envelop opening'.mp3");
+        const globalPaperAudio = new Audio('Letter Sound.mp3');
+        const globalBgAudio = new Audio('background sound 1.m4a');
+
+        // PRELOADER LOGIC
+        const audioAssets = [
+            { name: "Envelope Sound", audio: globalEnvAudio },
+            { name: "Paper Sound", audio: globalPaperAudio },
+            { name: "Background Music", audio: globalBgAudio } // The 175MB monster
+        ];
+
+        let loadedCount = 0;
+        const totalAssets = audioAssets.length;
+        const loaderBar = document.getElementById('loader-bar');
+        const loaderText = document.getElementById('loader-text');
+        const preloader = document.getElementById('preloader');
+
+        function updateLoader() {
+            loadedCount++;
+            const pct = Math.floor((loadedCount / totalAssets) * 100);
+            loaderBar.style.width = pct + "%";
+            loaderText.textContent = `Loaded ${loadedCount}/${totalAssets} sounds...`;
+
+            if (loadedCount >= totalAssets) {
+                setTimeout(() => {
+                    preloader.style.opacity = "0";
+                    setTimeout(() => {
+                        preloader.style.display = "none";
+                    }, 500);
+                }, 500);
+            }
+        }
+
+        audioAssets.forEach(asset => {
+            const audio = asset.audio;
+            // Force browser to start loading
+            audio.load();
+
+            // Check if already ready (cached)
+            if (audio.readyState >= 3) {
+                updateLoader();
+            } else {
+                // Wait for enough data to play smoothly
+                audio.addEventListener('canplaythrough', updateLoader, { once: true });
+                audio.addEventListener('error', () => {
+                    console.warn(`Failed to load ${asset.name}`);
+                    updateLoader(); // Proceed anyway
+                });
+
+                // Fallback timeout specifically for the huge file
+                if (asset.name === "Background Music") {
+                    setTimeout(() => {
+                        if (audio.readyState < 3) {
+                            console.log("Background music taking too long, proceeding...");
+                            updateLoader();
+                        }
+                    }, 8000); // 8s timeout for the big file
+                }
+            }
+        });
+
+        // Ensure volumes are set
+        globalEnvAudio.volume = 0.8;
+        globalPaperAudio.volume = 0.7;
+        globalBgAudio.volume = 0.25; // Nice background level
+        globalBgAudio.loop = true;
+
+        // AUTO-PLAY BG MUSIC ON LOAD (After fireworks/redirect)
+        window.addEventListener('load', () => {
+            globalBgAudio.play().catch(e => {
+                // If blocked, wait for first click
+                document.addEventListener('click', () => globalBgAudio.play(), { once: true });
+            });
+        });
+
+        function openFullscreenLetter() {
+            // Fullscreen Elements
+            const fullView = document.getElementById('full-letter-view');
+            const fullEnvelope = document.getElementById('full-envelope');
+
+            // 1. Show the Fullscreen Overlay
+            fullView.classList.remove('hidden');
+
+            // 2. Zoom In Sequence
+            setTimeout(() => {
+                fullView.classList.add('active'); // triggers scale(1.2)
+            }, 100);
+
+            // 3. Open Flap & Play Sound
+
+            // Start sound slightly before flap opens (balanced)
+            setTimeout(() => {
+                // START BG MUSIC (if not already playing)
+                if (globalBgAudio.paused) {
+                    globalBgAudio.play().catch(e => console.log(e));
+                }
+
+                // DUCKING: Pause BG sound immediately for envelope sound
+                globalBgAudio.pause();
+
+                // Reset and Play
+                globalEnvAudio.currentTime = 0;
+                globalEnvAudio.play().catch(e => console.log(e));
+            }, 400);
+
+            setTimeout(() => {
+                fullEnvelope.classList.add('open');
+            }, 1000);
+
+            // 4. Maximize Paper & Play Sound
+            setTimeout(() => {
+                fullView.classList.add('reading');
+
+                // STOP OPENING SOUND (as requested)
+                globalEnvAudio.pause();
+                globalEnvAudio.currentTime = 0;
+
+                // Play Letter Reading Sound (Emotional)
+                // Reset and Play
+                globalPaperAudio.currentTime = 0;
+                globalPaperAudio.play().catch(() => { });
+            }, 2200);
+        }
+
+        function closeLetter() {
+            const fullView = document.getElementById('full-letter-view');
+            const fullEnvelope = document.getElementById('full-envelope');
+
+            // 1. STOP LETTER SOUND IMMEDIATELY
+            globalPaperAudio.pause();
+            globalPaperAudio.currentTime = 0;
+
+            // 2. PLAY CLOSING SOUND
+            // (Re-using opening sound as requested)
+            globalEnvAudio.currentTime = 0;
+            globalEnvAudio.play().catch(e => console.log(e));
+
+            // Reset animation
+            fullView.classList.remove('reading');
+
+            setTimeout(() => {
+                fullEnvelope.classList.remove('open');
+                fullView.classList.remove('active');
+
+                // 3. STOP CLOSING SOUND WHEN ANIMATION ENDS (roughly 2s later)
+                setTimeout(() => {
+                    globalEnvAudio.pause();
+                    globalEnvAudio.currentTime = 0;
+
+                    // RESUME BG MUSIC when all action is done
+                    globalBgAudio.play().catch(() => { });
+
+                    fullView.classList.add('hidden');
+                }, 1000);
+            }, 800);
+        }
+
+        // Allow closing by clicking background (outside the paper)
+        const fullView = document.getElementById('full-letter-view');
+        const fullPaper = document.getElementById('full-paper');
+
+        fullView.addEventListener('click', (e) => {
+            // If clicking overlay and NOT the paper
+            if (e.target === fullView) {
+                closeLetter();
+            }
+        });
+
+        // Add shake animation keyframes dynamically if needed, 
+        // but it's cleaner to rely on CSS or simple transforms.
+
+        // 4. MUSIC TOGGLE logic
+        // 4. MUSIC TOGGLE logic removed
+
+        setInterval(createHeart, 600);
+    </script>
+</body>
+
+</html>

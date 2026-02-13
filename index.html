@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Initialize</title>
+
+  <!-- PRELOAD ASSETS FOR NEXT PAGE (Critical for performance) -->
+  <link rel="preload" href="envelop%20opening'.mp3" as="audio">
+  <link rel="preload" href="Letter%20Sound.mp3" as="audio">
+
+  <style>
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, Arial, sans-serif;
+      background: #000;
+      padding: 18px;
+    }
+
+    #matrixCanvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.4;
+    }
+
+    /* 🔥 SOFT SCREEN SHAKE */
+    @keyframes screenShake {
+      0% {
+        transform: translate(0px, 0px);
+      }
+
+      25% {
+        transform: translate(-2px, 1px);
+      }
+
+      50% {
+        transform: translate(2px, -1px);
+      }
+
+      75% {
+        transform: translate(-1px, 2px);
+      }
+
+      100% {
+        transform: translate(0px, 0px);
+      }
+    }
+
+    .shake {
+      animation: screenShake 0.25s ease-in-out 6;
+    }
+
+    .box {
+      width: min(520px, 100%);
+      background: rgba(255, 255, 255, 0.92);
+      border-radius: 22px;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+      padding: 22px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.5);
+      overflow: hidden;
+    }
+
+    h1 {
+      margin: 0 0 10px 0;
+      font-size: 26px;
+    }
+
+    /* Mobile Repairs */
+    @media (max-width: 480px) {
+      body {
+        padding: 10px;
+        min-height: 100dvh;
+        /* Better mobile height support */
+      }
+
+      .box {
+        width: 100%;
+        padding: 15px;
+      }
+
+      h1 {
+        font-size: 22px;
+      }
+
+      p {
+        font-size: 14px;
+        margin-bottom: 12px;
+      }
+
+      /* Fix input zoom on iOS */
+      .puzzleInput {
+        font-size: 16px !important;
+      }
+
+      /* Adjust large overlay text */
+      .warningTitle {
+        font-size: 28px !important;
+        letter-spacing: 2px !important;
+      }
+
+      .warningSub {
+        font-size: 32px !important;
+      }
+
+      .brokenHeart {
+        font-size: 60px !important;
+      }
+
+      .crashCard {
+        width: 95vw;
+        padding: 15px;
+      }
+
+      .text-slam {
+        font-size: 2rem !important;
+      }
+    }
+
+    p {
+      margin: 0 0 18px 0;
+      opacity: 0.8;
+    }
+
+    button {
+      padding: 12px 18px;
+      border: none;
+      border-radius: 14px;
+      background: #ff3f6c;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      box-shadow: 0 10px 25px rgba(255, 63, 108, 0.35);
+    }
+
+    button:active {
+      transform: scale(0.98);
+    }
+
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+    }
+
+    /* Boot panel */
+    .panel {
+      display: none;
+      margin-top: 14px;
+      text-align: left;
+      border-radius: 16px;
+      background: #0b1020;
+      color: #c9d7ff;
+      padding: 14px;
+      font-family: monospace;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .scan {
+      position: absolute;
+      left: -30%;
+      top: 0;
+      width: 30%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(0, 255, 170, 0.15), transparent);
+      animation: scan 2.2s linear infinite;
+    }
+
+    @keyframes scan {
+      to {
+        left: 100%;
+      }
+    }
+
+    .line {
+      margin: 6px 0;
+      white-space: pre-wrap;
+    }
+
+    .hint {
+      color: #ffe08a;
+    }
+
+    .barWrap {
+      margin: 10px 0 6px;
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.10);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: rgba(107, 255, 177, 0.85);
+      transition: width 90ms linear;
+    }
+
+    /* SECURITY BRIDGE */
+    .authBridge {
+      display: none;
+      margin-top: 14px;
+      padding: 18px;
+      border-radius: 18px;
+      border-radius: 18px;
+      background: #0f0505;
+      /* Solid dark background */
+      color: #ffccd5;
+      border: 1px solid rgba(255, 0, 60, 0.5);
+      box-shadow:
+        0 0 25px rgba(255, 0, 60, 0.4),
+        0 0 60px rgba(255, 0, 60, 0.25),
+        inset 0 0 40px rgba(255, 0, 80, 0.15);
+      font-family: monospace;
+      position: relative;
+      overflow: hidden;
+      text-align: left;
+      animation: dangerPulse 1.6s infinite alternate;
+    }
+
+    @keyframes dangerPulse {
+      from {
+        box-shadow: 0 0 15px rgba(255, 0, 60, 0.3);
+      }
+
+      to {
+        box-shadow: 0 0 40px rgba(255, 0, 60, 0.7);
+      }
+    }
+
+    .bridgeScan {
+      position: absolute;
+      left: -40%;
+      top: 0;
+      width: 40%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 0, 0, 0.2), transparent);
+      animation: bridgeScan 2.4s linear infinite;
+    }
+
+    @keyframes bridgeScan {
+      to {
+        left: 110%;
+      }
+    }
+
+    .dangerFlash {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, transparent 40%, rgba(255, 0, 0, 0.15), transparent 60%);
+      animation: flashMove 2.5s linear infinite;
+    }
+
+    @keyframes flashMove {
+      from {
+        transform: translateX(-100%);
+      }
+
+      to {
+        transform: translateX(100%);
+      }
+    }
+
+    .bridgeHeader {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .chip {
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 0, 60, 0.4);
+      background: rgba(255, 0, 60, 0.2);
+    }
+
+    .bridgeTitle {
+      font-size: 15px;
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #ff6b88;
+    }
+
+    .bridgeSub {
+      margin-top: 6px;
+      font-size: 12px;
+    }
+
+    .decodeBtn {
+      width: 100%;
+      padding: 12px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #ff003c, #ff4f7a);
+      color: white;
+      font-weight: 900;
+      cursor: pointer;
+      margin-top: 14px;
+      box-shadow: 0 12px 28px rgba(255, 0, 60, 0.5);
+    }
+
+    .decodeBtn:active {
+      transform: scale(0.98);
+    }
+
+    .bridgeFooter {
+      margin-top: 10px;
+      font-size: 11px;
+      text-align: center;
+      opacity: 0.7;
+    }
+
+    /* PUZZLE (cinematic console style) */
+    .puzzle {
+      display: none;
+      margin-top: 14px;
+      padding: 18px;
+      border-radius: 18px;
+      background: #080a10;
+      /* Solid dark background */
+      color: #e0f2ff;
+      border: 1px solid rgba(90, 255, 200, 0.4);
+      text-align: left;
+      box-shadow: 0 18px 60px rgba(0, 0, 0, 0.35);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .puzzle::before {
+      content: "";
+      position: absolute;
+      left: -35%;
+      top: 0;
+      width: 35%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(90, 255, 200, 0.12), transparent);
+      animation: scan 2.1s linear infinite;
+    }
+
+    .puzzleHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .puzzleTitle {
+      font-weight: 900;
+      letter-spacing: 1px;
+      color: #8cffd8;
+      font-size: 14px;
+    }
+
+    .attempts {
+      font-size: 12px;
+      color: #ffe08a;
+      opacity: 0.95;
+    }
+
+    .riddle {
+      margin: 10px 0 12px;
+      line-height: 1.5;
+      font-size: 14px;
+      color: #ffffff;
+      text-shadow: 0 0 2px rgba(0, 0, 0, 0.5);
+      text-align: center;
+      font-style: italic;
+    }
+
+    .puzzleRow {
+      display: flex;
+      gap: 10px;
+    }
+
+    .puzzleInput {
+      flex: 1;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      background: rgba(255, 255, 255, 0.06);
+      color: #ffffff;
+      outline: none;
+      font-size: 14px;
+    }
+
+    .puzzleInput::placeholder {
+      color: rgba(215, 231, 255, 0.55);
+    }
+
+    .puzzleBtn {
+      padding: 12px 14px;
+      border: none;
+      border-radius: 14px;
+      background: linear-gradient(135deg, #6bffb1, #3ddcff);
+      color: #06121f;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+      box-shadow: 0 12px 28px rgba(61, 220, 255, 0.18);
+    }
+
+    .puzzleBtn:active {
+      transform: scale(0.98);
+    }
+
+    .puzzleMsg {
+      margin-top: 10px;
+      font-size: 12px;
+      opacity: 0.95;
+    }
+
+    .puzzleMsg.bad {
+      color: #ff8aa0;
+    }
+
+    .puzzleMsg.good {
+      color: #8cffd8;
+    }
+
+    /* CRASH OVERLAY */
+    .crashOverlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, rgba(255, 0, 60, 0.25), rgba(0, 0, 0, 0.92));
+      z-index: 9999;
+    }
+
+    .crashOverlay.show {
+      display: flex;
+    }
+
+    .crashCard {
+      width: min(680px, 92vw);
+      border-radius: 22px;
+      padding: 22px;
+      border: 1px solid rgba(255, 0, 80, 0.35);
+      background: rgba(5, 0, 12, 0.75);
+      box-shadow: 0 0 40px rgba(255, 0, 80, 0.35), 0 0 120px rgba(255, 0, 80, 0.18);
+      color: #ffd0d9;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      animation: crashIn 450ms ease-out both;
+    }
+
+    @keyframes crashIn {
+      from {
+        transform: translateY(14px) scale(0.98);
+        opacity: 0;
+      }
+
+      to {
+        transform: translateY(0) scale(1.0);
+        opacity: 1;
+      }
+    }
+
+    /* CINEMATIC EFFECTS */
+    @keyframes shake {
+      0% {
+        transform: translate(1px, 1px) rotate(0deg);
+      }
+
+      10% {
+        transform: translate(-1px, -2px) rotate(-1deg);
+      }
+
+      20% {
+        transform: translate(-3px, 0px) rotate(1deg);
+      }
+
+      30% {
+        transform: translate(3px, 2px) rotate(0deg);
+      }
+
+      40% {
+        transform: translate(1px, -1px) rotate(1deg);
+      }
+
+      50% {
+        transform: translate(-1px, 2px) rotate(-1deg);
+      }
+
+      60% {
+        transform: translate(-3px, 1px) rotate(0deg);
+      }
+
+      70% {
+        transform: translate(3px, 1px) rotate(-1deg);
+      }
+
+      80% {
+        transform: translate(-1px, -1px) rotate(1deg);
+      }
+
+      90% {
+        transform: translate(1px, 2px) rotate(0deg);
+      }
+
+      100% {
+        transform: translate(1px, -2px) rotate(-1deg);
+      }
+    }
+
+    .shake-screen {
+      animation: shake 0.5s cubic-bezier(.36, .07, .19, .97) both infinite;
+    }
+
+    @keyframes glitch {
+      0% {
+        text-shadow: 2px 0 red, -2px 0 cyan;
+      }
+
+      25% {
+        text-shadow: -2px 0 red, 2px 0 cyan;
+      }
+
+      50% {
+        text-shadow: 2px 0 red, -2px 0 cyan;
+      }
+
+      75% {
+        text-shadow: -2px 0 red, 2px 0 cyan;
+      }
+
+      100% {
+        text-shadow: 2px 0 red, -2px 0 cyan;
+      }
+    }
+
+    .glitch-text {
+      animation: glitch 0.3s infinite;
+      font-weight: 900;
+      letter-spacing: 2px;
+      color: #ff003c;
+    }
+
+    @keyframes slam {
+      0% {
+        transform: scale(3.5);
+        opacity: 0;
+      }
+
+      60% {
+        transform: scale(0.95);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    .text-slam {
+      animation: slam 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+      font-size: 3rem !important;
+      /* Make it huge */
+      text-shadow: 0 0 20px #ff003c;
+    }
+
+    .crashGlitch {
+      position: absolute;
+      inset: 0;
+      background:
+        repeating-linear-gradient(to bottom,
+          rgba(255, 255, 255, 0.05),
+          rgba(255, 255, 255, 0.05) 1px,
+          transparent 1px,
+          transparent 6px);
+      opacity: 0.12;
+      pointer-events: none;
+      animation: glitchMove 1.2s linear infinite;
+    }
+
+    @keyframes glitchMove {
+      from {
+        transform: translateY(0);
+      }
+
+      to {
+        transform: translateY(18px);
+      }
+    }
+
+    .crashTitle {
+      font-weight: 1000;
+      letter-spacing: 2px;
+      color: #ff4f7a;
+      margin: 0 0 6px;
+      font-size: 14px;
+    }
+
+    .crashSub {
+      margin: 0 0 16px;
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .heartWrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 10px 0 14px;
+    }
+
+    .brokenHeart {
+      font-size: 90px;
+      line-height: 1;
+      filter: drop-shadow(0 0 16px rgba(255, 0, 80, 0.55));
+      animation: heartPulse 900ms ease-in-out infinite alternate;
+      position: relative;
+    }
+
+    @keyframes heartPulse {
+      0% {
+        transform: scale(1);
+        opacity: 0.9;
+      }
+
+      50% {
+        transform: scale(1.15);
+        opacity: 1;
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 0.9;
+      }
+    }
+
+    .crack {
+      position: absolute;
+      left: 50%;
+      top: 8%;
+      width: 4px;
+      height: 84%;
+      background: linear-gradient(to bottom, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.1));
+      transform: translateX(-50%) rotate(10deg);
+      opacity: 0.85;
+      clip-path: polygon(50% 0%, 65% 12%, 45% 22%, 60% 34%, 40% 46%, 55% 58%, 35% 70%, 52% 82%, 42% 100%, 58% 100%, 50% 82%, 65% 70%, 45% 58%, 60% 46%, 40% 34%, 55% 22%, 35% 12%);
+    }
+
+    .crashLog {
+      text-align: left;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 12px;
+      padding: 14px;
+      border-radius: 16px;
+      background: rgba(255, 0, 80, 0.08);
+      border: 1px solid rgba(255, 0, 80, 0.18);
+      color: #ffd0d9;
+      white-space: pre-wrap;
+    }
+
+    .smallTip {
+      margin-top: 12px;
+      font-size: 11px;
+      opacity: 0.7;
+    }
+
+    /* 🔥 VALENTINE WARNING OVERLAY */
+    .warningOverlay {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      z-index: 10000;
+      font-family: monospace;
+      text-align: center;
+    }
+
+    .warningOverlay.show {
+      display: flex;
+    }
+
+    .warningTitle {
+      font-size: 40px;
+      color: #ff003c;
+      font-weight: 900;
+      letter-spacing: 4px;
+      animation: blinkRed 0.4s infinite;
+      margin-bottom: 20px;
+      text-shadow: 0 0 20px rgba(255, 0, 60, 0.8);
+    }
+
+    .warningMsg {
+      font-size: 24px;
+      color: #fff;
+      margin-bottom: 40px;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeInUp 0.8s forwards 0.5s;
+    }
+
+    .warningSub {
+      font-size: 50px;
+      font-weight: 900;
+      color: #ff4f7a;
+      opacity: 0;
+      transform: scale(0.8);
+      animation: dramaticScale 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards 2s;
+      text-shadow: 0 0 30px rgba(255, 79, 122, 0.6);
+    }
+
+    @keyframes blinkRed {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes dramaticScale {
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="matrixCanvas"></canvas>
+  <div class="box" id="mainBox">
+    <h1 id="title">INITIALIZE VALENTINE SURPRISE ❤️</h1>
+    <p id="subtitle">Tap initialize to start… 😏</p>
+
+    <button id="initBtn" onclick="startInit()">Initialize</button>
+
+    <!-- Old bgMusic removed (using new logic) -->
+    <!-- Try playing 'initiate.mp3' on load (Best effort) -->
+    <audio id="initAudio" src="initiate.mp3" autoplay></audio>
+
+    <div class="panel" id="panel">
+      <div class="scan"></div>
+      <div class="line">> ValentineOS v1.0 — Boot Sequence</div>
+      <div class="line hint" id="step">> Waiting…</div>
+
+      <div class="barWrap">
+        <div class="bar" id="bar"></div>
+      </div>
+
+      <div class="line">> Loading… <span id="pct">0%</span></div>
+    </div>
+
+    <div class="authBridge" id="authMenu">
+      <div class="bridgeScan"></div>
+      <div class="dangerFlash"></div>
+
+      <div class="bridgeHeader">
+        <div class="chip">SECURITY BRIDGE</div>
+        <div class="chip">LOCKED</div>
+      </div>
+
+      <div class="bridgeTitle">HIGH LEVEL AUTHENTICATION REQUIRED</div>
+      <div class="bridgeSub">
+        Access protected by Bridge-7 Firewall.<br>
+        Unauthorized attempts will be logged.
+      </div>
+
+      <button class="decodeBtn" onclick="goDecode()">DECODE ACCESS</button>
+
+      <div class="bridgeFooter">Tip: Keep your answers lowercase 😈</div>
+    </div>
+
+    <!-- ✅ PUZZLE SECTION -->
+    <div class="puzzle" id="puzzle">
+      <div class="puzzleHeader">
+        <div class="puzzleTitle">ACCESS RIDDLE // LEVEL-7</div>
+        <div class="attempts" id="attemptsText">Attempts: 3</div>
+      </div>
+
+      <div class="riddle" id="riddleText">
+        Count every star until the sky is empty,<br>
+        then count every wave until the sea is still.<br>
+        When you finish both,<br>
+        my love will begin to be measurable.<br>
+        Until then, what is it?
+      </div>
+
+      <div class="puzzleRow">
+        <input id="ans" class="puzzleInput" type="text" placeholder="type ONE word in lowercase…" autocomplete="off" />
+        <button class="puzzleBtn" id="unlockBtn" onclick="checkAnswer()">UNLOCK</button>
+      </div>
+
+      <div class="puzzleMsg" id="puzzleMsg"></div>
+    </div>
+  </div>
+
+  <!-- ⚠️ VALENTINE WARNING -->
+  <div class="warningOverlay" id="warningOverlay">
+    <div class="warningTitle" id="warnTitle">⚠ WARNING ⚠</div>
+    <div class="warningMsg">VALENTINE STATUS ACTIVATED</div>
+    <div class="warningSub">THAT’S YOU.</div>
+  </div>
+
+  <!-- 🎥 SURPRISE VIDEO OVERLAY -->
+  <div id="videoOverlay" style="
+      position: fixed; 
+      inset: 0; 
+      background: #000; 
+      z-index: 20000; 
+      display: none; 
+      justify-content: center; 
+      align-items: center;
+      opacity: 0;
+      transition: opacity 1s ease-in;
+  ">
+    <video id="surpriseVideo" style="width: 100%; height: 100%; object-fit: contain;" playsinline>
+      <!-- updated to user's file -->
+      <source src="Video.MOV" type="video/mp4">
+      <source src="Video.MOV" type="video/quicktime">
+    </video>
+    <div id="skipVideo" style="
+          position: fixed; 
+          bottom: 20px; 
+          right: 20px; 
+          color: rgba(255,255,255,0.5); 
+          font-family: monospace; 
+          cursor: pointer;
+          font-size: 12px;
+          z-index: 20005;
+      " onclick="finishVideo()">Skip >></div>
+
+    <!-- Final Message -->
+    <div id="finalMessage" style="
+          display: none;
+          flex-direction: column;
+          align-items: center;
+          color: #fff;
+          font-family: monospace;
+          font-size: 1.5rem;
+          text-align: center;
+          opacity: 0;
+          transition: opacity 1s ease-in;
+          z-index: 20002;
+      ">
+      <div style="opacity: 0.7; margin-bottom: 10px;">NOW TIME FOR...</div>
+      <div style="font-size: 2.5rem; font-weight: bold; color: #ff003c; text-shadow: 0 0 20px rgba(255, 0, 60, 0.6);">
+        The Real Surprise ✨
+      </div>
+    </div>
+  </div>
+
+  <!-- 💔 CRASH OVERLAY -->
+  <div class="crashOverlay" id="crashOverlay" aria-hidden="true">
+    <div class="crashCard" id="crashCard">
+      <div class="crashGlitch"></div>
+      <div class="crashTitle">SYSTEM CRASH</div>
+      <div class="crashSub">Bridge-7 Firewall triggered a fatal lockout.</div>
+
+      <div class="heartWrap">
+        <div class="brokenHeart">💔<div class="crack"></div>
+        </div>
+      </div>
+
+      <div class="crashLog" id="crashLog">[FATAL] AUTHENTICATION FAILED x3
+        [LOCK] HEARTCORE SECURITY ENGAGED
+        [STATUS] ACCESS TERMINATED</div>
+
+    </div>
+  </div>
+
+  <script>
+    /*
+      ✅ Put your loading sound file in the SAME folder as this HTML and rename it to:
+      "loading-sfx-8.mp3"
+    */
+
+    let audioCtx;
+    let buffers = {};
+    let loadingAudio = null;
+
+    const SFX = {
+      click: "click.mp3",
+      loading: "5xpdf00c5o3-loading-sfx-8.mp3",
+      alarm: "alarm.mp3",
+      glass: "glass.mp3",
+      typing: "typing.mp3",
+      intro: "intro.mp3",
+      broken_heart: "broken heart.mp3",
+    };
+    const LOADING_VOLUME = 0.4;
+
+    async function loadBuffer(name, url) {
+      const res = await fetch(url, { cache: "force-cache" });
+      if (!res.ok) throw new Error(`Failed to load ${name} from ${url}`);
+      const arr = await res.arrayBuffer();
+      buffers[name] = await audioCtx.decodeAudioData(arr);
+    }
+
+    async function initAudio() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === "suspended") await audioCtx.resume();
+
+      if (!buffers.click || !buffers.alarm || !buffers.glass) {
+        await Promise.all([
+          loadBuffer("click", SFX.click),
+          loadBuffer("alarm", SFX.alarm),
+          loadBuffer("glass", SFX.glass),
+          loadBuffer("typing", SFX.typing),
+        ]);
+      }
+    }
+
+    async function playSfx(name, volume = 1) {
+      try {
+        if (!SFX[name]) return;
+        const audio = new Audio(SFX[name]);
+        audio.volume = volume;
+        await audio.play();
+      } catch (e) {
+        console.warn("Audio play failed:", e);
+      }
+    }
+
+    function startLoadingLoop(volume = 0.25) {
+      stopLoadingLoop();
+      loadingAudio = new Audio(SFX.loading);
+      loadingAudio.loop = true;
+      loadingAudio.volume = volume;
+      loadingAudio.play().catch(() => { });
+    }
+
+    /* MUSIC CONTROLS */
+    // Autoplay logic is handled in startInit now
+
+    function stopLoadingLoop() {
+      if (loadingAudio) {
+        loadingAudio.pause();
+        loadingAudio.currentTime = 0;
+        loadingAudio = null;
+      }
+    }
+
+    // BACKGROUND AUDIO MANAGER
+    let backgroundAudio = new Audio("background sound 1.m4a");
+    backgroundAudio.loop = true;
+    backgroundAudio.volume = 0.2; // Low volume as requested
+
+    function playBackground() {
+      if (backgroundAudio.paused) {
+        backgroundAudio.play().catch(() => { });
+      }
+    }
+
+    function pauseBackground() {
+      backgroundAudio.pause();
+    }
+
+    let heartbeatAudio = null;
+    let decodeAudio = null;
+
+    function startHeartbeat(volume = 0.5) {
+      stopHeartbeat();
+      // pauseBackground(); // REMOVED: Background music plays alongside loop
+      heartbeatAudio = new Audio("Heart beat sound.mp3");
+      heartbeatAudio.loop = true;
+      heartbeatAudio.volume = volume;
+      heartbeatAudio.play().catch(() => { });
+    }
+
+    function stopHeartbeat() {
+      if (heartbeatAudio) {
+        heartbeatAudio.pause();
+        heartbeatAudio.currentTime = 0;
+        heartbeatAudio = null;
+        // playBackground(); // REMOVED: Was never paused
+      }
+    }
+
+    function startDecodeSound(volume = 0.5) {
+      stopDecodeSound();
+      // pauseBackground(); // REMOVED
+      decodeAudio = new Audio("brvhrtz-heartbeat-02-225103.mp3");
+      decodeAudio.loop = true;
+      decodeAudio.volume = volume;
+      decodeAudio.play().catch(() => { });
+    }
+
+    function stopDecodeSound() {
+      if (decodeAudio) {
+        decodeAudio.pause();
+        decodeAudio.currentTime = 0;
+        decodeAudio = null;
+        // playBackground(); // REMOVED
+      }
+    }
+
+    let warningAudio = null;
+    function startWarningSound() {
+      stopWarningSound();
+
+      // Stop initiate.mp3 if it's still playing (check both element and global obj)
+      const initAudio = document.getElementById("initAudio");
+      if (initAudio) {
+        initAudio.pause();
+        initAudio.currentTime = 0;
+      }
+      if (window.globalInitSound) {
+        window.globalInitSound.pause();
+        window.globalInitSound.currentTime = 0;
+      }
+      // EXACT FILENAME: "warning sound.mp3"
+      warningAudio = new Audio("warning sound.mp3");
+      warningAudio.loop = true;
+      warningAudio.volume = 0.6;
+      warningAudio.play().catch(() => { });
+    }
+
+    function stopWarningSound() {
+      if (warningAudio) {
+        warningAudio.pause();
+        warningAudio.currentTime = 0;
+        warningAudio = null;
+      }
+    }
+
+    let fwAudio = null;
+    function startFireworksSound() {
+      stopFireworksSound();
+      // EXACT FILENAME: "fire work.mp3"
+      fwAudio = new Audio("fire work.mp3");
+      fwAudio.loop = true;
+      fwAudio.volume = 0.8;
+      fwAudio.play().catch(() => { });
+    }
+
+    function stopFireworksSound() {
+      if (fwAudio) {
+        fwAudio.pause();
+        fwAudio.currentTime = 0;
+        fwAudio = null;
+      }
+    }
+
+    function startInit() {
+      const btn = document.getElementById("initBtn");
+      const panel = document.getElementById("panel");
+      const bar = document.getElementById("bar");
+      const pct = document.getElementById("pct");
+      const step = document.getElementById("step");
+      const title = document.getElementById("title");
+      const subtitle = document.getElementById("subtitle");
+      const authMenu = document.getElementById("authMenu");
+      const box = document.getElementById("mainBox");
+
+      // FIX: Resume audio context on first user interaction
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      initAudio();
+
+      // PLAY BACKGROUND MUSIC ON INITIALIZE
+      // playBackground(); // Removed per request (starts after fireworks/in main.html)
+
+      btn.disabled = true;
+      btn.style.display = "none";
+      title.textContent = "INITIALIZING...";
+      subtitle.textContent = "Secure system loading...";
+      panel.style.display = "block";
+
+      // (Intro music now handled by initiate.mp3 on load)
+
+      // startLoadingLoop(LOADING_VOLUME);
+      playSfx("typing", 0.3); // Ambient computer noise
+      playSfx("click", 0.7);
+      startHeartbeat(0.6); // Start user requested sound
+
+      let p = 0;
+      const timer = setInterval(() => {
+        p += 5;
+        if (p > 100) p = 100;
+        bar.style.width = p + "%";
+        pct.textContent = p + "%";
+
+        if (p === 100) {
+          clearInterval(timer);
+          stopLoadingLoop();
+          stopHeartbeat(); // Stop user requested sound
+
+          step.textContent = "> Boot complete";
+          title.textContent = "SYSTEM READY";
+          subtitle.textContent = "Security lock enabled.";
+
+          // DELAY: Adjust this to change when the "Boot complete" alarm/screen appears
+          setTimeout(() => {
+            panel.style.display = "none";
+            authMenu.style.display = "block";
+            box.classList.add("shake");
+            playSfx("alarm", 0.8);
+          }, 400); // Changed from 700 to 400 for snappier response
+        }
+      }, 90);
+    }
+
+    /* ✅ Show puzzle instead of redirect */
+    function goDecode() {
+      const authMenu = document.getElementById("authMenu");
+      const puzzle = document.getElementById("puzzle");
+      const subtitle = document.getElementById("subtitle");
+
+      playSfx("click");
+      startDecodeSound(0.7); // Start user requested sound
+
+      subtitle.textContent = "Bridge unlocked. Solve the riddle…";
+      authMenu.style.display = "none";
+      puzzle.style.display = "block";
+
+      // focus input for cinematic feel
+      setTimeout(() => document.getElementById("ans").focus(), 120);
+    }
+
+    /* ✅ RIDDLE ANSWER + 3 ATTEMPTS + CRASH */
+    let attemptsLeft = 3;
+
+    // Your correct ONE-word answer (lowercase)
+    const SECRET_ANSWER = "infinite";
+
+    // If you want ONLY ONE exact word, keep it like above.
+    // If you want to accept synonyms, add them here:
+    const ACCEPTED = new Set([SECRET_ANSWER]); // e.g. new Set(["infinite","endless","immeasurable"])
+
+    function updateAttemptsUI() {
+      document.getElementById("attemptsText").textContent = `Attempts: ${attemptsLeft}`;
+    }
+
+    function checkAnswer() {
+      const input = document.getElementById("ans");
+      const ans = input.value.trim().toLowerCase();
+      const msg = document.getElementById("puzzleMsg");
+      const subtitle = document.getElementById("subtitle");
+
+      playSfx("click");
+
+      if (!ans) {
+        msg.className = "puzzleMsg bad";
+        msg.textContent = "⚠ enter a word…";
+        input.focus();
+        return;
+      }
+
+      if (ACCEPTED.has(ans)) {
+        stopDecodeSound(); // Stop user sound
+
+        msg.className = "puzzleMsg good";
+        msg.textContent = "✅ ACCESS GRANTED — unlocking…";
+        subtitle.textContent = "Access granted.";
+        document.getElementById("unlockBtn").disabled = true;
+        input.disabled = true;
+
+        // Cinematic Warning Sequence
+        setTimeout(() => {
+          const warning = document.getElementById("warningOverlay");
+          warning.classList.add("show");
+
+          // Start Warning Alarm Looping
+          startWarningSound();
+
+          setTimeout(() => {
+            // STOP Alarm when fireworks start
+            stopWarningSound();
+
+            playSfx("glass", 0.5); // Thud on "That's You"
+
+            // 🎆 FIREWORKS START HERE
+            if (typeof startCelebration === "function") {
+              startCelebration();
+            }
+            startFireworksSound();
+
+            // TRANSITION TO VIDEO (The "Fake" Surprise)
+            setTimeout(() => {
+              stopFireworksSound();
+              playSurpriseVideo();
+            }, 6000); // Fireworks play for 6 seconds
+          }, 4000); // 4 Seconds Warning Phase
+        }, 1200);
+
+        return;
+      }
+
+      // wrong answer
+      attemptsLeft--;
+      updateAttemptsUI();
+
+      // cinematic error response
+      msg.className = "puzzleMsg bad";
+      msg.textContent = `❌ ACCESS DENIED — ${attemptsLeft} attempt(s) left.`;
+      subtitle.textContent = "Wrong key. Firewall watching…";
+
+      // small shake + flicker
+      const box = document.getElementById("mainBox");
+      box.classList.add("shake", "flicker");
+      setTimeout(() => box.classList.remove("shake", "flicker"), 450);
+
+      if (attemptsLeft <= 0) {
+        triggerCrash();
+      } else {
+        input.select();
+        input.focus();
+      }
+    }
+
+    function triggerCrash() {
+      const input = document.getElementById("ans");
+      const btn = document.getElementById("unlockBtn");
+      const msg = document.getElementById("puzzleMsg");
+
+      input.disabled = true;
+      btn.disabled = true;
+
+      msg.className = "puzzleMsg bad";
+      msg.textContent = "☠ LOCKOUT — fatal security response engaged.";
+
+      // show crash overlay
+      const overlay = document.getElementById("crashOverlay");
+      overlay.classList.add("show");
+      overlay.setAttribute("aria-hidden", "false");
+
+      // Stop all other audio
+      if (typeof stopHeartbeat === "function") stopHeartbeat();
+      if (typeof stopDecodeSound === "function") stopDecodeSound();
+      if (typeof stopWarningSound === "function") stopWarningSound();
+      if (typeof stopFireworksSound === "function") stopFireworksSound();
+      if (typeof pauseBackground === "function") pauseBackground();
+
+      // Stop initiate sounds if playing
+      const initAudio = document.getElementById("initAudio");
+      if (initAudio) {
+        initAudio.pause();
+        initAudio.currentTime = 0;
+      }
+      if (window.globalInitSound) {
+        window.globalInitSound.pause();
+        window.globalInitSound.currentTime = 0;
+      }
+
+      // ONLY play broken heart sound
+      playSfx("broken_heart", 1.0);
+
+      // prevent scrolling / interaction
+      document.body.style.overflow = "hidden";
+    }
+
+    function playSurpriseVideo() {
+      const overlay = document.getElementById('videoOverlay');
+      const video = document.getElementById('surpriseVideo');
+
+      // Hide existing UI
+      document.getElementById('puzzle').style.display = 'none';
+      document.getElementById('warningOverlay').style.display = 'none';
+      document.getElementById('fireworks').style.display = 'none'; // Optional: keep FW behind? No, hide for focus.
+
+      overlay.style.display = 'flex';
+
+      // Fade in
+      setTimeout(() => {
+        overlay.style.opacity = '1';
+        video.volume = 1.0;
+        video.play().catch(e => console.log("Video play failed", e));
+      }, 100);
+
+      // When video ends, go to REAL surprise
+      video.onended = () => {
+        finishVideo();
+      };
+    }
+
+    function finishVideo() {
+      const video = document.getElementById('surpriseVideo');
+      const skip = document.getElementById('skipVideo');
+      const msg = document.getElementById('finalMessage');
+      const overlay = document.getElementById('videoOverlay');
+
+      // 1. Fade out video visual & audio
+      video.style.transition = "opacity 1s ease";
+      video.style.opacity = "0";
+      skip.style.display = "none";
+
+      if (video.volume > 0) {
+        const fadeAudio = setInterval(() => {
+          if (video.volume > 0.1) {
+            video.volume -= 0.1;
+          } else {
+            clearInterval(fadeAudio);
+            try { video.pause(); } catch (e) { }
+          }
+        }, 100);
+      }
+
+      // 2. Show the "Real Surprise" message
+      setTimeout(() => {
+        video.style.display = "none";
+        msg.style.display = "flex";
+
+        // Force clean render
+        setTimeout(() => {
+          msg.style.opacity = "1";
+        }, 50);
+
+        // 3. Wait for reading time (4 seconds) then redirect
+        setTimeout(() => {
+          // Fade out everything
+          overlay.style.transition = "opacity 1s ease-out";
+          overlay.style.opacity = '0';
+
+          setTimeout(() => {
+            sessionStorage.setItem("unlocked", "true");
+            window.location.href = "main.html";
+          }, 1000);
+        }, 4000); // 4 seconds delay for the message
+
+      }, 1000); // Wait 1s for video fade out
+    }
+
+    /* Enter key submits */
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const puzzleVisible = getComputedStyle(document.getElementById("puzzle")).display !== "none";
+        const overlayVisible = document.getElementById("crashOverlay").classList.contains("show");
+        if (puzzleVisible && !overlayVisible) {
+          checkAnswer();
+        }
+      }
+    });
+
+    updateAttemptsUI();
+  </script>
+
+  <script>
+    // Matrix Rain Effect
+    const canvas = document.getElementById('matrixCanvas');
+    const ctx = canvas.getContext('2d');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const katakana = 'アァカサタナハマヤャラワガザダバパイィキシチニヒミリヰギジヂビピウゥクスツヌフムユュルグズブヅプエェケセテネヘメレヱゲゼデベペオォコソトノホモヨョロヲゴゾドボポヴッン';
+    const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const nums = '0123456789';
+    const alphabet = katakana + latin + nums;
+
+    const fontSize = 16;
+    const columns = canvas.width / fontSize;
+
+    const rainDrops = [];
+    for (let x = 0; x < columns; x++) {
+      rainDrops[x] = 1;
+    }
+
+    const draw = () => {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = '#0F0';
+      ctx.font = fontSize + 'px monospace';
+
+      for (let i = 0; i < rainDrops.length; i++) {
+        const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+        ctx.fillText(text, i * fontSize, rainDrops[i] * fontSize);
+
+        if (rainDrops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          rainDrops[i] = 0;
+        }
+        rainDrops[i]++;
+      }
+    };
+
+    setInterval(draw, 30);
+
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+  </script>
+  <script>
+    // INITIATE SOUND - Plays on Load (or first interaction)
+    window.addEventListener('load', () => {
+      // Create new audio object for initiate sound
+      window.globalInitSound = new Audio("initiate.mp3");
+      window.globalInitSound.volume = 1.0;
+
+      const tryPlayInit = () => {
+        window.globalInitSound.play().catch(e => {
+          console.log("Auto-play blocked, waiting for click:", e);
+          // Fallback: Play on first click
+          document.addEventListener('click', () => window.globalInitSound.play(), { once: true });
+        });
+      };
+
+      tryPlayInit();
+    });
+  </script>
+
+  <!-- FIREWORKS CELEBRATION -->
+  <canvas id="fireworks"
+    style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10001; display: none;"></canvas>
+  <script>
+    const fwCanvas = document.getElementById('fireworks');
+    const fwCtx = fwCanvas.getContext('2d');
+    let fwActive = false;
+    let particles = [];
+
+    function resizeFw() {
+      fwCanvas.width = window.innerWidth;
+      fwCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeFw);
+    resizeFw();
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.color = color;
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * 8 + 2;
+        this.vx = Math.cos(angle) * velocity;
+        this.vy = Math.sin(angle) * velocity;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.02 + 0.015;
+        this.gravity = 0.05;
+      }
+
+      update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vy += this.gravity;
+        this.alpha -= this.decay;
+      }
+
+      draw() {
+        fwCtx.save();
+        fwCtx.globalAlpha = this.alpha;
+        fwCtx.fillStyle = this.color;
+        fwCtx.beginPath();
+        fwCtx.arc(this.x, this.y, 3, 0, Math.PI * 2);
+        fwCtx.fill();
+        fwCtx.restore();
+      }
+    }
+
+    function createParticle(x, y, color) {
+      return new Particle(x, y, color);
+    }
+
+    function launchFirework() {
+      const x = Math.random() * fwCanvas.width;
+      const y = Math.random() * (fwCanvas.height * 0.5);
+      const color = `hsl(${Math.random() * 360}, 100%, 60%)`;
+
+      for (let i = 0; i < 50; i++) {
+        particles.push(createParticle(x, y, color));
+      }
+    }
+
+    function animateFireworks() {
+      if (!fwActive && particles.length === 0) return;
+
+      fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.update();
+        p.draw();
+        if (p.alpha <= 0) particles.splice(i, 1);
+      }
+
+      if (fwActive && Math.random() < 0.1) {
+        launchFirework();
+      }
+
+      requestAnimationFrame(animateFireworks);
+    }
+
+    function startCelebration() {
+      const fw = document.getElementById('fireworks');
+      if (!fw) return;
+      fw.style.display = 'block';
+      fwActive = true;
+      animateFireworks();
+
+      // Initial Big Burst
+      launchFirework();
+      setTimeout(launchFirework, 200);
+      setTimeout(launchFirework, 400);
+    }
+  </script>
+</body>
+
+</html>
